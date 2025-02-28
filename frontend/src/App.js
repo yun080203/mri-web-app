@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 // 导入 axios 库，用于发送 HTTP 请求
 import axios from 'axios';
 
-// 定义一个名为 App 的函数组件
+// 定义一个名为 App 的函数组件，这是整个应用的根组件
 function App() {
     // 使用 useState 钩子创建状态变量 selectedFile，用于存储用户选择的文件
     // 初始值为 null，表示还没有选择文件
@@ -17,18 +17,20 @@ function App() {
     // 使用 useState 钩子创建状态变量 processedImage，用于存储处理后的图片文件名
     // 初始值为 null，表示还没有处理后的图片
     const [processedImage, setProcessedImage] = useState(null);
-    // 新增：定义 errorMessage 状态变量和对应的更新函数
+    // 使用 useState 钩子创建状态变量 errorMessage，用于存储上传过程中出现的错误信息
+    // 初始值为空字符串，表示没有错误信息
     const [errorMessage, setErrorMessage] = useState('');
 
     // 定义一个处理文件选择事件的函数
     const handleFileChange = (e) => {
-        // 当用户选择文件时，将选择的第一个文件存储到 selectedFile 状态中
+        // 当用户选择文件时，事件对象 e 的 target.files 是一个文件列表
+        // 这里取第一个文件并存储到 selectedFile 状态中
         setSelectedFile(e.target.files[0]);
     };
 
     // 定义一个处理文件上传的异步函数
     const handleUpload = async () => {
-        // 检查用户是否选择了文件
+        // 检查用户是否选择了文件，如果 selectedFile 不为 null 则表示选择了文件
         if (selectedFile) {
             // 创建一个 FormData 对象，用于将文件数据以表单形式发送
             const formData = new FormData();
@@ -38,11 +40,11 @@ function App() {
                 // 使用 axios 发送 POST 请求到指定的后端地址 'http://backend:5000/upload'
                 // 并传递 FormData 对象作为请求体
                 const response = await axios.post('http://backend:5000/upload', formData, {
-                    // 监听上传进度事件
+                    // 监听上传进度事件，当有上传进度变化时会触发回调函数
                     onUploadProgress: (e) => {
-                        // 检查上传进度是否可计算
+                        // 检查上传进度是否可计算，即是否能获取到已上传的字节数和总字节数
                         if (e.lengthComputable) {
-                            // 计算上传的百分比
+                            // 计算上传的百分比，用已上传的字节数除以总字节数再乘以 100
                             const percentComplete = (e.loaded / e.total) * 100;
                             // 更新 uploadProgress 状态，显示上传进度
                             setUploadProgress(percentComplete);
@@ -53,10 +55,12 @@ function App() {
                 setProcessedImage(response.data.processed_image);
                 // 在控制台打印上传成功的信息和后端返回的数据
                 console.log('Upload successful', response.data);
+                // 上传成功后，清空错误信息
                 setErrorMessage('');
             } catch (error) {
                 // 如果上传过程中出现错误，在控制台打印上传失败的信息和错误对象
                 console.error('Upload failed', error);
+                // 设置错误信息，提示用户上传失败并稍后重试
                 setErrorMessage('上传失败，请稍后重试。');
             }
         }
@@ -77,18 +81,33 @@ function App() {
         }
     };
 
+    // 新增：处理鼠标滚轮缩放的函数
+    const handleWheel = (e) => {
+        // e.deltaY 表示鼠标滚轮滚动的垂直方向距离
+        // 如果小于 0 表示向上滚动，调用 handleZoomIn 函数放大图片
+        if (e.deltaY < 0) {
+            handleZoomIn();
+        } else {
+            // 否则表示向下滚动，调用 handleZoomOut 函数缩小图片
+            handleZoomOut();
+        }
+    };
+
     // 返回 JSX 元素，用于渲染组件的 UI
     return (
-        <div>
+        // 在根 div 元素上添加 onWheel 事件监听器，当鼠标滚轮滚动时调用 handleWheel 函数
+        <div onWheel={handleWheel}>
             {/* 创建一个文件输入框，当用户选择文件时触发 handleFileChange 函数 */}
             <input type="file" onChange={handleFileChange} />
             {/* 创建一个上传按钮，点击时触发 handleUpload 函数 */}
             <button onClick={handleUpload}>Upload</button>
-            {/* 显示文件上传的进度 */}
-            <div>Upload Progress: {uploadProgress}%</div>
+            {/* 显示文件上传的进度，从 uploadProgress 状态中获取进度百分比 */}
+            <div className="progress-bar"> {/* 改动：添加类名 progress-bar */}
+                Upload Progress: {uploadProgress}%
+            </div>
             {/* 如果用户选择了文件，显示缩放按钮和上传的图片 */}
             {selectedFile && (
-                <div>
+                <div className="image-container">
                     {/* 放大按钮，点击时触发 handleZoomIn 函数 */}
                     <button onClick={handleZoomIn}>Zoom In</button>
                     {/* 缩小按钮，点击时触发 handleZoomOut 函数 */}
@@ -115,7 +134,7 @@ function App() {
                     />
                 </div>
             )}
-            {/* 新增：如果有错误信息，显示错误信息 */}
+            {/* 如果有错误信息，显示错误信息，文字颜色设置为红色 */}
             {errorMessage && <div style={{ color: 'red' }}>{errorMessage}</div>}
         </div>
     );
