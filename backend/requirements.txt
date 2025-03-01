@@ -1,4 +1,6 @@
 Flask==2.3.2
 Flask-SQLAlchemy==3.1.1
 numpy==1.25.2
-opencv-python==4.8.0.76
+opencv-python-headless==4.8.0.76  # 改用无头版本
+pydicom==2.4.3
+python-dotenv==1.0.0

@@ -1,15 +1,32 @@
+# 使用更完整的基础镜像
+FROM python:3.9-slim-bullseye
 
-# 使用 Python 基础镜像
-FROM python:3.9-slim
+# 设置时区和清华镜像源
+ENV TZ=Asia/Shanghai
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# 安装系统依赖（补充更多OpenCV所需依赖）
+RUN apt-get update && apt-get install -y \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libxt6 \
+    dcm2niix \
+    grep \          
+    binutils \      
+    && rm -rf /var/lib/apt/lists/*
+
 # 设置工作目录
 WORKDIR /app
-# 复制依赖文件
+
+# 使用清华pip镜像
 COPY requirements.txt .
-# 安装依赖
-RUN pip install -r requirements.txt
-# 复制项目代码
+RUN pip install --no-cache-dir -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+
+# 复制项目文件
 COPY . .
-# 暴露端口
+
 EXPOSE 5000
-# 启动应用
 CMD ["python", "app.py"]
